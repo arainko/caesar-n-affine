@@ -2,7 +2,7 @@ package io.github.arainko.model
 
 import io.github.arainko.model.errors._
 
-object program {
+object cli {
   sealed trait CipherArgument
 
   object CipherArgument {
@@ -26,7 +26,7 @@ object program {
       arg match {
         case "-e" => Right(Subargument.Encode)
         case "-d" => Right(Subargument.Decode)
-        case "-j" => Right(Subargument.AnalysisWithPlain)
+        case "-j" => Right(Subargument.AnalysisWithExtra)
         case "-k" => Right(Subargument.AnalysisWithCrypto)
         case wrong =>
           Left(SubargumentError(s"'$wrong' is not a valid subargument, try '-e', '-d', '-j' or '-k' instead"))
@@ -34,7 +34,7 @@ object program {
 
     case object Encode             extends Subargument
     case object Decode             extends Subargument
-    case object AnalysisWithPlain  extends Subargument
+    case object AnalysisWithExtra  extends Subargument
     case object AnalysisWithCrypto extends Subargument
   }
 

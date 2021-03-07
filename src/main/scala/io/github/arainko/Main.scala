@@ -9,7 +9,7 @@ import zio.stream.ZStream
 
 import java.nio.file.StandardOpenOption
 import io.github.arainko.model.errors._
-import io.github.arainko.model.program._
+import io.github.arainko.model.cli._
 import zio.internal._
 
 /**
@@ -19,11 +19,7 @@ import zio.internal._
  * 1. The path of the file to dump
  * 2. The character encoding to use — optional, defaults to UTF-8
  */
-object TextFileDump extends App {
-
-  override val platform: Platform = Platform.benchmark
-    .withReportFailure(_ => ())
-    .withTracing(Tracing.disabled)
+object Main extends App {
 
   override def run(args: List[String]): URIO[ZEnv, ExitCode] = {
     val cipherArg = args.headOption
@@ -35,8 +31,8 @@ object TextFileDump extends App {
       .flatMap(Subargument.fromString)
 
     val program = for {
-      cipher <- ZIO.fromEither(cipherArg)
-      subarg <- ZIO.fromEither(subargument)
+      cipher <- ZIO.fromEither(cipherArg).tapError(err => putStrLnErr(err.toString))
+      subarg <- ZIO.fromEither(subargument).tapError(err => putStrErr(err.toString))
       // cos = cipher.
       _ <- dispatch(cipher, subarg).flatMap(putStrLn(_))
       // fileArg  <- getStrLn
@@ -48,7 +44,7 @@ object TextFileDump extends App {
       // _        <- asd.fold(err => putStrErr(err.toString()), res => putStr(res))
     } yield ()
 
-    program.exitCode
+    program.fold(_ => ExitCode.failure, _ => ExitCode.success)
   }
 
   private def dispatch(cipherArg: CipherArgument, subarg: Subargument) = ZIO.succeed(s"$cipherArg $subarg")
