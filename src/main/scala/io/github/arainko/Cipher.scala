@@ -27,33 +27,49 @@ object Cipher {
           .foldLeft("")(_ + _.toString)
       }
 
-    override def decode(crypto: Crypto, key: Key.Caesar): Plain = ???
+    override def decode(crypto: Crypto, key: Key.Caesar): Plain =
+      Plain {
+        crypto.text
+          .flatMap(decoded(key))
+          .foldLeft("")(_ + _.toString)
+      }
 
-    override def crackWithExtra(text: Crypto, extra: Extra): Either[ImpossibleToDecipher, (Key.Caesar, Plain)] = ???
+    override def crackWithExtra(crypto: Crypto, extra: Extra): Either[ImpossibleToDecipher, (Key.Caesar, Plain)] =
+      extra.text.zipWithIndex
+        .filter { case (char, _) => (lowerCaseAlphabet ++ upperCaseAlphabet).contains(char) }
+        .flatMap { case (char, index) =>
+          Option.when(crypto.text.isDefinedAt(index))(Key.Caesar(crypto.text(index).toInt - char.toInt))
+        }
+        .headOption
+        .map(key => key -> decode(crypto, key))
+        .toRight(ImpossibleToDecipherError)
 
-    override def crack(text: Crypto): List[Plain] = ???
+    override def crack(text: Crypto): List[Plain] = (1 to 25).map(Key.Caesar.andThen(decode(text, _))).toList
 
-    private def encodeRelative(alphabetStart: Char, charToEncode: Char, key: Key.Caesar) = {
-      val charCode         = charToEncode.toInt
+    private def relativeCode(alphabetStart: Char, char: Char, key: Key.Caesar, f: (Int, Int) => Int) = {
+      val charCode         = char.toInt
       val offsetCharCode   = charCode - alphabetStart
-      val moduloCharCode   = (offsetCharCode + key.offset) % 26
+      val moduloCharCode   = Math.floorMod(f(offsetCharCode, key.offset), 26)
       val alphabetCharCode = alphabetStart + moduloCharCode
       alphabetCharCode.toChar
     }
 
-    private def encoded(key: Key.Caesar)(char: Char) =
+    private def process(key: Key.Caesar, f: (Int, Int) => Int)(char: Char) =
       char match {
         case numeric if numeric.isDigit            => Some(numeric)
         case punct if isPunctuation(punct)         => Some(punct)
         case whitespace if whitespace.isWhitespace => Some(whitespace)
         case lowerChar if lowerCaseAlphabet.contains(lowerChar) =>
-          val encodedChar = encodeRelative('a', lowerChar, key)
-          Some(encodedChar)
+          val decodedChar = relativeCode('a', lowerChar, key, f)
+          Some(decodedChar)
         case upperChar if upperCaseAlphabet.contains(upperChar) =>
-          val encodedChar = encodeRelative('A', upperChar, key)
-          Some(encodedChar)
+          val decodedChar = relativeCode('A', upperChar, key, f)
+          Some(decodedChar)
         case _ => None
       }
+
+    private def decoded(key: Key.Caesar)(char: Char) = process(key, _ - _)(char)
+    private def encoded(key: Key.Caesar)(char: Char) = process(key, _ + _)(char)
 
   }
 }

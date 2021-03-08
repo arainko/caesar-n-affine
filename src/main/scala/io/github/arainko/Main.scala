@@ -1,5 +1,7 @@
 package io.github.arainko
 
+import io.github.arainko.model.cli._
+import io.github.arainko.model.errors._
 import zio._
 import zio.console._
 import zio.nio.channels.AsynchronousFileChannel
@@ -8,17 +10,7 @@ import zio.nio.core.file.Path
 import zio.stream.ZStream
 
 import java.nio.file.StandardOpenOption
-import io.github.arainko.model.errors._
-import io.github.arainko.model.cli._
-import zio.internal._
 
-/**
- * Dumps a text file to the console using a specified encoding.
- *
- * Two command line parameters must be provided:
- * 1. The path of the file to dump
- * 2. The character encoding to use — optional, defaults to UTF-8
- */
 object Main extends App {
 
   override def run(args: List[String]): URIO[ZEnv, ExitCode] = {
@@ -26,22 +18,14 @@ object Main extends App {
       .toRight(ArgumentsMissingError)
       .flatMap(CipherArgument.fromString)
 
-    val subargument = args.tail.headOption
+    val subargument = args.drop(1).headOption
       .toRight(ArgumentsMissingError)
       .flatMap(Subargument.fromString)
 
     val program = for {
       cipher <- ZIO.fromEither(cipherArg).tapError(err => putStrLnErr(err.toString))
       subarg <- ZIO.fromEither(subargument).tapError(err => putStrErr(err.toString))
-      // cos = cipher.
       _ <- dispatch(cipher, subarg).flatMap(putStrLn(_))
-      // fileArg  <- getStrLn
-      // asd <- ZStream.fromFile(Paths.get(fileArg))
-      //   .transduce(Charset.Standard.utf8.newDecoder.transducer())
-      //   .runCollect
-      //   .map(_.mkString)
-      //   .either
-      // _        <- asd.fold(err => putStrErr(err.toString()), res => putStr(res))
     } yield ()
 
     program.fold(_ => ExitCode.failure, _ => ExitCode.success)
