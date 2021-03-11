@@ -1,13 +1,11 @@
 package io.github.arainko
 
-import zio.test._
-import zio.test.Assertion._
+import io.github.arainko.cipher.Cipher
 import io.github.arainko.model.common._
+import zio.test.Assertion._
+import zio.test._
 
 object AffineCipherTest extends DefaultRunnableSpec {
-
-  def inverseInRing(ring: Int)(value: Int): Option[Int] =
-    (0 until ring).find(elem => Math.floorMod(elem * value, ring) == 1)
 
   def spec: ZSpec[Environment, Failure] =
     suite("Affine Cipher test")(
@@ -26,11 +24,19 @@ object AffineCipherTest extends DefaultRunnableSpec {
         assert(plain)(equalTo(expectedPlain))
       },
       test("bruteforce") {
-        val crypto = Crypto("HGAH")
+        val crypto        = Crypto("HGAH")
         val expectedPlain = Plain("TEST")
-        val bruteforced = Cipher.affine.crack(crypto)
+        val bruteforced   = Cipher.affine.crack(crypto)
         assert(bruteforced)(hasSize(equalTo(312))) &&
         assert(bruteforced)(contains(expectedPlain))
+      },
+      test("decode with extra") {
+        val crypto        = Crypto("HGAH")
+        val extra         = Extra("TE")
+        val expectedPlain = Plain("TEST")
+        val expectedKey   = Key.Affine.Validated(4, 7)
+        val result        = Cipher.affine.crackWithExtra(crypto, extra)
+        assert(result)(isRight(equalTo(expectedKey -> expectedPlain)))
       }
     )
 }

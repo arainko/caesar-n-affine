@@ -1,8 +1,9 @@
 package io.github.arainko
 
-import zio.test._
-import zio.test.Assertion._
+import io.github.arainko.cipher.Cipher
 import io.github.arainko.model.common._
+import zio.test.Assertion._
+import zio.test._
 
 object CaesarCipherTest extends DefaultRunnableSpec {
 

@@ -9,11 +9,12 @@ lazy val `caesar-n-affine` = (project in file("."))
     semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision,
     libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-nio"           % "1.0.0-RC10",
-      "dev.zio" %% "zio"               % zioVersion,
-      "dev.zio" %% "zio-test"          % zioVersion % "test",
-      "dev.zio" %% "zio-test-sbt"      % zioVersion % "test",
-      "dev.zio" %% "zio-test-magnolia" % zioVersion % "test"
+      "org.typelevel" %% "cats-core"         % "2.4.2",
+      "dev.zio"       %% "zio-nio"           % "1.0.0-RC10",
+      "dev.zio"       %% "zio"               % zioVersion,
+      "dev.zio"       %% "zio-test"          % zioVersion % "test",
+      "dev.zio"       %% "zio-test-sbt"      % zioVersion % "test",
+      "dev.zio"       %% "zio-test-magnolia" % zioVersion % "test"
     )
   )
   .configs(IntegrationTest)

@@ -10,6 +10,7 @@ import zio.nio.core.file.Path
 import zio.stream.ZStream
 
 import java.nio.file.StandardOpenOption
+import io.github.arainko.cipher.CipherM
 
 object Main extends App {
 
@@ -23,9 +24,10 @@ object Main extends App {
       .flatMap(Subargument.fromString)
 
     val program = for {
-      cipher <- ZIO.fromEither(cipherArg).tapError(err => putStrLnErr(err.toString))
-      subarg <- ZIO.fromEither(subargument).tapError(err => putStrErr(err.toString))
-      _ <- dispatch(cipher, subarg).flatMap(putStrLn(_))
+      _ <- CipherM.encodeCaesar.tapError(err => putStrErr(err.toString))
+      // cipher <- ZIO.fromEither(cipherArg).tapError(err => putStrLnErr(err.toString))
+      // subarg <- ZIO.fromEither(subargument).tapError(err => putStrErr(err.toString))
+      // _ <- dispatch(cipher, subarg).flatMap(putStrLn(_))
     } yield ()
 
     program.fold(_ => ExitCode.failure, _ => ExitCode.success)
@@ -35,17 +37,6 @@ object Main extends App {
 
   // /home/aleksander/IdeaProjects/caesar-n-affine/src/main/resources/plain.txt
 
-  private def readFile(charset: Charset, file: Path) =
-    AsynchronousFileChannel
-      .open(file, StandardOpenOption.READ, StandardOpenOption.CREATE)
-      .use { channel =>
-        ZStream
-          .fromIterableM {
-            channel.size.flatMap(size => channel.readChunk(size.toInt, 0L))
-          }
-          .transduce(charset.newDecoder.transducer())
-          .runCollect
-          .map(_.mkString)
-      }
+  
 
 }
