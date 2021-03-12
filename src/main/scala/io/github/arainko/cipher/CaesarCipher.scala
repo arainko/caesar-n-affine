@@ -28,9 +28,8 @@ class CaesarCipher(
   ): Either[ImpossibleToDecipher, (Key.Caesar.Validated, Plain)] =
     extra.text.zipWithIndex
       .filter { case (char, _) => (lowerCaseAlphabet ++ upperCaseAlphabet).contains(char) }
-      .flatMap {
-        case (char, index) =>
-          Option.when(crypto.text.isDefinedAt(index))(Key.Caesar.Validated(crypto.text(index).toInt - char.toInt))
+      .flatMap { case (char, index) =>
+        Option.when(crypto.text.isDefinedAt(index))(Key.Caesar.Validated(crypto.text(index).toLower - char.toLower))
       }
       .headOption
       .map { key =>
@@ -42,9 +41,7 @@ class CaesarCipher(
 
   override def crack(text: Crypto): List[Plain] = (1 to 25).map(Key.Caesar.Validated.andThen(decode(text, _))).toList
 
-  private def decoded(key: Key.Caesar.Validated)(char: Char) =
-    Cipher.process(key)(_ - _.offset)(char)
+  private def decoded(key: Key.Caesar.Validated)(char: Char) = Cipher.process(key)(_ - _.offset)(char)
 
-  private def encoded(key: Key.Caesar.Validated)(char: Char) =
-    Cipher.process(key)(_ + _.offset)(char)
+  private def encoded(key: Key.Caesar.Validated)(char: Char) = Cipher.process(key)(_ + _.offset)(char)
 }

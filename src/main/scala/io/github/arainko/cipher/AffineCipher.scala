@@ -1,11 +1,15 @@
 package io.github.arainko.cipher
 
 import io.github.arainko.model.common._
+import cats.instances.tuple._
+import cats.syntax.bifunctor._
 import io.github.arainko.model.errors.{ImpossibleToDecipher, ImpossibleToDecipherError}
+
+//TODO: Fix decrypt with extra
 
 class AffineCipher(
   lowerCaseAlphabet: Set[Char],
-  upperCaseAlphabet: Set[Char],
+  upperCaseAlphabet: Set[Char]
 ) extends Cipher[Key.Affine.Validated] {
 
   private val coprimes = Set(1, 3, 5, 7, 9, 11, 15, 17, 19, 21, 23, 25)
@@ -30,19 +34,20 @@ class AffineCipher(
   ): Either[ImpossibleToDecipher, (Key.Affine.Validated, Plain)] = {
     val candidates = extra.text.zipWithIndex
       .filter { case (char, _) => (lowerCaseAlphabet ++ upperCaseAlphabet).contains(char) }
-      .flatMap {
-        case (char, index) =>
-          Option.when(crypto.text.isDefinedAt(index))(crypto.text(index) -> char)
+      .flatMap { case (char, index) =>
+        Option.when(crypto.text.isDefinedAt(index))(crypto.text(index).toLower -> char.toLower)
       }
       .take(2)
+      .map(_.bimap(_ - 97, _ - 97))
 
     for {
       refinedCandidates <- Either.cond(candidates.size == 2, candidates, ImpossibleToDecipherError)
-      (result1, alpha1) = refinedCandidates.head
-      (result2, alpha2) = refinedCandidates.tail.head
-      equation1         = Equation(alpha1.toInt, 1, result1.toInt)
-      equation2         = Equation(alpha2.toInt, 1, result2.toInt)
-      key <- solveForAlphaAndBetaInRing26(equation1, equation2)
+      (crypto1, extra1) = refinedCandidates.head
+      (crypto2, extra2) = refinedCandidates.tail.head
+      inverse = inverseInRing(26)((extra1 - extra2).abs)
+      factor = Math.floorMod(inverse * (crypto1 - crypto2), 26) 
+      offset = Math.floorMod(inverse * (extra1 * crypto2 - extra2 * crypto1), 26)
+      key = Key.Affine.Validated(offset, factor)
     } yield key -> decode(crypto, key)
   }
 
@@ -68,20 +73,4 @@ class AffineCipher(
     (0 until ring)
       .find(elem => Math.floorMod(elem * value, ring) == 1)
       .get
-
-  private def solveForAlphaAndBetaInRing26(equation1: Equation, equation2: Equation) =
-    for {
-      _ <- Either.cond(equation1.beta == 1, (), ImpossibleToDecipherError)
-      _ <- Either.cond(equation2.beta == 1, (), ImpossibleToDecipherError)
-      reduced = (equation1 - equation2).mod(26)
-      inverseAlpha <- Either.cond(
-        coprimes.contains(reduced.alpha),
-        inverseInRing(26)(reduced.alpha),
-        ImpossibleToDecipherError
-      )
-      alphaValue = Math.floorMod(reduced.result * inverseAlpha, 26)
-      nonModBeta = equation1.result - alphaValue * equation1.alpha
-      betaValue  = Math.floorMod(nonModBeta, 26)
-    } yield Key.Affine.Validated(betaValue, alphaValue)
-
 }

@@ -1,9 +1,9 @@
 package io.github.arainko.model
 
-import cats.syntax.all._
 import cats.instances.either._
-import cats.instances.option._
 import cats.instances.list._
+import cats.instances.option._
+import cats.syntax.all._
 import io.github.arainko.model.errors._
 
 object common {
@@ -41,7 +41,7 @@ object common {
     sealed trait Affine extends Key
 
     object Affine {
-      private val coprimes = List(1, 3, 5, 7, 9, 11, 15, 17, 19, 21, 23, 25)
+      private val coprimes     = List(1, 3, 5, 7, 9, 11, 15, 17, 19, 21, 23, 25)
       private val errorMessage = "Affine key is constructed from two integer values (the offset and the factor)"
 
       def fromString(string: String): Either[BadKeyError, Unvalidated] =

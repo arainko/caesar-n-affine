@@ -38,7 +38,8 @@ object CaesarCipherTest extends DefaultRunnableSpec {
         val plain   = Plain("zZc! abc? abc-abc")
         val encoded = Cipher.caesar.encode(plain, key)
         val extra   = Extra("zZc! a a a a a a a a a a a a ")
-        val crackedWithExtra = Cipher.caesar.crackWithExtra(encoded, extra)
+        val crackedWithExtra = Cipher.caesar
+          .crackWithExtra(encoded, extra)
           .map { case (key, plain) => key.offset -> plain }
         assert(crackedWithExtra)(isRight(equalTo(key.offset -> plain)))
       }

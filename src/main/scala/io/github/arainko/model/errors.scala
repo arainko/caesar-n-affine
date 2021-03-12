@@ -18,7 +18,6 @@ object errors {
   type ImpossibleToDecipher = ImpossibleToDecipherError.type
 
   final case class BadKeyError(message: String) extends CipherError
-  case object ImpossibleToDecipherError              extends CipherError
-
+  case object ImpossibleToDecipherError         extends CipherError
 
 }
